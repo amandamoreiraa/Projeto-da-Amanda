@@ -1,0 +1,28 @@
+<html>
+	<head>
+		<title>Home</title>	
+	</head>	
+    <body>
+
+       
+
+            <div>
+
+				<h1>Olá {{ current_user.name }} </h1>
+				
+			</div>	
+
+	
+
+	
+		<a href="{{ url_for('logout') }}">Sair</a>
+
+		
+	        {% for c in clientes %}
+				<a href="/editar/{{ c.id }}">Editar(a)</a>
+				<a href="/excluir/{{ c.id }}">Excluir(a)</a>
+			{% endfor %}
+		
+
+	</body>
+</html>		
