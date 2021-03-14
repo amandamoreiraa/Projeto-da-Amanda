@@ -1,19 +1,29 @@
 from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager,login_user, logout_user
+from flask_login import LoginManager, login_user, logout_user, UserMixin
+from flask_wtf import FlaskForm
+from flask_wtf.csrf import CSRFProtect
+from wtforms import StringField, PasswordField
+from wtforms.validators import DataRequired
 import sqlite3
 
 app = Flask(__name__, template_folder='templates')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///projeto.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'True'
+app.config['SECRET_KEY'] = 'amanda'
 db = SQLAlchemy(app)
 lm = LoginManager(app)
+csrf = CSRFProtect(app)
+
+class LoginForm(FlaskForm):
+	email = StringField("email", validators=[DataRequired()])
+	senha = PasswordField("senha", validators=[DataRequired()])	
 
 @lm.user_loader
 def get_user(cliente_id):
 	return Cliente.query.filter_by(id=cliente_id).first()
 
-class Cliente(db.Model):
+class Cliente(db.Model, UserMixin):
 	__tablename__ = 'clientes'
 	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 	nome = db.Column(db.String(45), nullable=True)
@@ -77,15 +87,13 @@ def home():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-	if request.method == 'POST':
-		email = request.form['email']
-		cpf = request.form['cpf']
-		pis = request.form['pis']
-		senha = request.form['senha']
-		
-		cliente = Cliente.query.filter_by(email=email, cpf=cpf, pis=pis).first()
-
-        
+	form = LoginForm()
+	if form.validate_on_submit():
+		cliente = Cliente.query.filter_by(email=form.email.data).first()
+		if cliente and cliente.senha == form.senha.data:	
+			login_user(cliente)
+			flask.flash('logado')
+ 
 		return redirect(url_for('home'))
 
 	return render_template('login.html')
